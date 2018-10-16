@@ -21,6 +21,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- defined : searchgithub://authorize -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="authorize"
+                    android:scheme="searchgithub"/>
+            </intent-filter>
         </activity>
 
         <!-- 뒤로 되돌아가기 버튼 사용하고 싶은 경우 parentActivityName 을 사용하면 된다. -->
