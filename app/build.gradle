@@ -13,6 +13,10 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        // from gradle.properties
+        buildConfigField "String", "GITHUB_CLIENT_ID", project.properties["GITHUB_CLIENT_ID"] ?: "\"NOT_FOUND\""
+        buildConfigField "String", "GITHUB_CLIENT_SECRET", project.properties["GITHUB_CLIENT_SECRET"] ?: "\"NOT_FOUND\""
     }
     buildTypes {
         release {
