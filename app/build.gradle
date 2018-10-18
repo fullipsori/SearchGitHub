@@ -66,4 +66,8 @@ dependencies {
     implementation "org.jetbrains.anko:anko-commons:0.10.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
+    //RxBinding
+    // https://mvnrepository.com/artifact/com.jakewharton.rxbinding2/rxbinding-appcompat-v7
+    implementation 'com.jakewharton.rxbinding2:rxbinding-appcompat-v7-kotlin:2.2.0'
+
 }

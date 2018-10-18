@@ -6,6 +6,8 @@ import com.bumptech.glide.Glide
 import com.example.fullipsori.searchgithub.R
 import com.example.fullipsori.searchgithub.api.provideGithubApi
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_repository.*
 import java.text.ParseException
@@ -18,6 +20,8 @@ class RepositoryActivity : AppCompatActivity() {
         const val KEY_USER_LOGIN = "user_login"
         const val KEY_REPO_NAME = "repo_name"
     }
+
+    private val disposables = CompositeDisposable()
 
     val api by lazy { provideGithubApi(this@RepositoryActivity) }
 
@@ -36,7 +40,7 @@ class RepositoryActivity : AppCompatActivity() {
 
 
     private fun showRepositoryInfo(login : String, repo : String){
-        api.getRepository(login, repo)
+        disposables += api.getRepository(login, repo)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe {  }
@@ -61,5 +65,10 @@ class RepositoryActivity : AppCompatActivity() {
 
                 })
 
+    }
+
+    override fun onStop() {
+        super.onStop()
+        disposables.clear()
     }
 }

@@ -14,6 +14,8 @@ import com.example.fullipsori.searchgithub.api.provideAuthApi
 import com.example.fullipsori.searchgithub.data.AuthTokenProvider
 import com.example.fullipsori.searchgithub.ui.main.MainActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_signin.*
 import org.jetbrains.anko.Android
@@ -23,8 +25,9 @@ import org.jetbrains.anko.newTask
 
 class SignInActivity : AppCompatActivity() {
 
-    internal val api by lazy { provideAuthApi() }
-    internal val authTokenProvider by lazy { AuthTokenProvider(this@SignInActivity) }
+    private val api by lazy { provideAuthApi() }
+    private val authTokenProvider by lazy { AuthTokenProvider(this@SignInActivity) }
+    private val disposables = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +49,6 @@ class SignInActivity : AppCompatActivity() {
 
 
         if(null != authTokenProvider.token){
-            Log.d("xsemiyas", "token: ${authTokenProvider.token}")
             launchMainActivity()
         }
     }
@@ -58,8 +60,14 @@ class SignInActivity : AppCompatActivity() {
         getAccessToken(code)
     }
 
+    override fun onStop() {
+        super.onStop()
+
+        disposables.clear()
+    }
+
     private fun getAccessToken(code : String){
-        api.getAccessToken(BuildConfig.GITHUB_CLIENT_ID, BuildConfig.GITHUB_CLIENT_SECRET, code)
+        disposables += api.getAccessToken(BuildConfig.GITHUB_CLIENT_ID, BuildConfig.GITHUB_CLIENT_SECRET, code)
                 .observeOn(AndroidSchedulers.mainThread())
                 .map { it.accessToken }
                 .doOnSubscribe{showProgress(true)}
