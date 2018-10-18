@@ -1,4 +1,4 @@
 ext {
     buildToolsVersion = '27.0.1'
-    androidPluginVersion = '3.1.4'
+    androidPluginVersion = '3.2.1'
 }

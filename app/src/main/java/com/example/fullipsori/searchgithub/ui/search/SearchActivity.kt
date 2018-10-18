@@ -1,30 +1,30 @@
 package com.example.fullipsori.searchgithub.ui.search
 
 import android.content.Context
-import android.inputmethodservice.InputMethodService
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.SearchView
 import android.view.Menu
 import android.view.MenuItem
-import android.view.inputmethod.InputMethod
 import android.view.inputmethod.InputMethodManager
-import android.widget.LinearLayout
-import android.widget.SearchView
 import com.example.fullipsori.searchgithub.R
-import com.example.fullipsori.searchgithub.api.GithubApi
+import com.example.fullipsori.searchgithub.api.model.GithubRepo
 import com.example.fullipsori.searchgithub.api.provideGithubApi
+import com.example.fullipsori.searchgithub.ui.repo.RepositoryActivity
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_search.*
+import org.jetbrains.anko.startActivity
 
-class SearchActivity : AppCompatActivity() {
+class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
     internal lateinit var menuSearch : MenuItem
     internal lateinit var searchView : SearchView
     internal val api by lazy { provideGithubApi(this@SearchActivity) }
 
     internal val searchAdapter by lazy {
         SearchAdapter().apply{
+            setItemClickListener(this@SearchActivity)
         }
     }
 
@@ -42,7 +42,7 @@ class SearchActivity : AppCompatActivity() {
         menuSearch = menu.findItem(R.id.app_bar_search)
         searchView = (menuSearch.actionView as SearchView).apply {
             setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-                override fun onQueryTextSubmit(query: String?): Boolean {
+                override fun onQueryTextSubmit(query: String): Boolean {
                     updateTitle(query)
                     hideSoftKeyboard()
                     collapseSearchView()
@@ -103,5 +103,11 @@ class SearchActivity : AppCompatActivity() {
                 }){
 
                 }
+    }
+
+    override fun onItemClick(repository: GithubRepo) {
+/*        startActivity<RepositoryActivity>(
+                RepositoryActivity.KEY_USER_LOGIN to repository.owner.login,
+                RepositoryActivity.KEY_REPO_NAME to repository.name)*/
     }
 }

@@ -13,15 +13,15 @@ import kotlinx.android.synthetic.main.item_repository.view.*
 
 class SearchAdapter : RecyclerView.Adapter<SearchAdapter.RepositoryViewHolder>(){
 
-    val searchList : MutableList<GithubRepo> = mutableListOf()
+    var searchList : MutableList<GithubRepo> = mutableListOf()
+
+    private var listener : ItemClickListener? = null
 
     override fun onCreateViewHolder(p0: ViewGroup, p1: Int): RepositoryViewHolder =
             RepositoryViewHolder(p0)
 
     fun setItems(listRepo: List<GithubRepo>){
-        listRepo.forEach {
-            searchList.add(it)
-        }
+        searchList = listRepo.toMutableList()
     }
 
     override fun getItemCount(): Int = searchList.size
@@ -37,7 +37,9 @@ class SearchAdapter : RecyclerView.Adapter<SearchAdapter.RepositoryViewHolder>()
                         .load(repo.owner.avatarUrl)
                         .apply(RequestOptions().placeholder(ColorDrawable(Color.GRAY)))
                         .into(ivItemRepositoryProfile)
+                setOnClickListener { listener?.onItemClick(repo) }
             }
+
         }
     }
 
@@ -45,4 +47,11 @@ class SearchAdapter : RecyclerView.Adapter<SearchAdapter.RepositoryViewHolder>()
         : RecyclerView.ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_repository, parent, false))
 
 
+    fun setItemClickListener(listener : ItemClickListener?){
+        this.listener = listener
+    }
+
+    interface ItemClickListener {
+        fun onItemClick(repository : GithubRepo)
+    }
 }

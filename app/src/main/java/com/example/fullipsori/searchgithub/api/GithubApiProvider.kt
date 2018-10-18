@@ -37,16 +37,13 @@ fun provideAuthApi(): AuthApi
 
 
 internal class AuthIntercerceptor(private val token : String) : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        with(chain) {
+    override fun intercept(chain: Interceptor.Chain): Response = with(chain) {
             val newRequest = request().newBuilder().run {
                 addHeader("Authorization", "token " + token)
                 build()
             }
             proceed(newRequest)
         }
-
-    }
 }
 
 private fun provideAuthInterceptor(provider: AuthTokenProvider) : AuthIntercerceptor {
@@ -60,7 +57,7 @@ private fun provideAuthTokenProvider(context : Context)
 
 fun provideGithubApi(context : Context): GithubApi
     = Retrofit.Builder()
-        .baseUrl("https://github.com")
+        .baseUrl("https://api.github.com")
         .client(provideOkHttpClient(provideLoggingInterceptor(),
                     provideAuthInterceptor(provideAuthTokenProvider(context))))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.createAsync())
