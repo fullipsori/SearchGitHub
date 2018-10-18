@@ -106,8 +106,8 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
     }
 
     override fun onItemClick(repository: GithubRepo) {
-/*        startActivity<RepositoryActivity>(
+        startActivity<RepositoryActivity>(
                 RepositoryActivity.KEY_USER_LOGIN to repository.owner.login,
-                RepositoryActivity.KEY_REPO_NAME to repository.name)*/
+                RepositoryActivity.KEY_REPO_NAME to repository.name)
     }
 }

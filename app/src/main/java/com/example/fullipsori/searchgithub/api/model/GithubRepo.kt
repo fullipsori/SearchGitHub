@@ -9,5 +9,5 @@ class GithubRepo (
         val description : String?,
         val language : String?,
         @SerializedName("updated_at") val updatedAt : String,
-        @SerializedName("stargazers_count") val starts: Int
+        @SerializedName("stargazers_count") val stars: Int
 )
