@@ -12,6 +12,8 @@ import com.example.fullipsori.searchgithub.R
 import com.example.fullipsori.searchgithub.api.model.GithubRepo
 import com.example.fullipsori.searchgithub.api.provideGithubApi
 import com.example.fullipsori.searchgithub.ui.repo.RepositoryActivity
+import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
+import com.example.fullipsori.searchgithub.ui.utils.plusAssign
 import com.jakewharton.rxbinding2.support.v7.widget.RxSearchView
 import com.jakewharton.rxbinding2.support.v7.widget.queryTextChangeEvents
 import io.reactivex.Observable
@@ -25,8 +27,8 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
     private lateinit var menuSearch : MenuItem
     private lateinit var searchView : SearchView
     private val api by lazy { provideGithubApi(this@SearchActivity) }
-    private val disposables = CompositeDisposable()
-    private val viewDisposable = CompositeDisposable()
+    private val disposables = AutoClearedDisposable(this)
+    private val viewDisposable = AutoClearedDisposable(this, alwaysClearOnStop = false)
 
     internal val searchAdapter by lazy {
         SearchAdapter().apply{
@@ -41,6 +43,9 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
             layoutManager = LinearLayoutManager(this@SearchActivity)
             adapter = this@SearchActivity.searchAdapter
         }
+
+        lifecycle += disposables
+        lifecycle += viewDisposable
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -114,9 +119,4 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
                 RepositoryActivity.KEY_REPO_NAME to repository.name)
     }
 
-    override fun onStop() {
-        super.onStop()
-        disposables.clear()
-        viewDisposable.clear()
-    }
 }

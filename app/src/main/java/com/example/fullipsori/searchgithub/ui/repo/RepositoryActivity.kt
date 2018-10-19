@@ -5,6 +5,8 @@ import android.support.v7.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.example.fullipsori.searchgithub.R
 import com.example.fullipsori.searchgithub.api.provideGithubApi
+import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
+import com.example.fullipsori.searchgithub.ui.utils.plusAssign
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -21,7 +23,7 @@ class RepositoryActivity : AppCompatActivity() {
         const val KEY_REPO_NAME = "repo_name"
     }
 
-    private val disposables = CompositeDisposable()
+    private val disposables = AutoClearedDisposable(this)
 
     val api by lazy { provideGithubApi(this@RepositoryActivity) }
 
@@ -31,6 +33,8 @@ class RepositoryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_repository)
+
+        lifecycle += disposables
 
         val login = intent.getStringExtra(KEY_USER_LOGIN) ?: throw IllegalArgumentException("user login info")
         val repo = intent.getStringExtra(KEY_REPO_NAME) ?: throw IllegalArgumentException("key repo name")
@@ -67,8 +71,4 @@ class RepositoryActivity : AppCompatActivity() {
 
     }
 
-    override fun onStop() {
-        super.onStop()
-        disposables.clear()
-    }
 }

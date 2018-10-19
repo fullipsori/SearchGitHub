@@ -13,6 +13,9 @@ import com.example.fullipsori.searchgithub.R
 import com.example.fullipsori.searchgithub.api.provideAuthApi
 import com.example.fullipsori.searchgithub.data.AuthTokenProvider
 import com.example.fullipsori.searchgithub.ui.main.MainActivity
+import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
+import com.example.fullipsori.searchgithub.ui.utils.plusAssign
+import com.jakewharton.rxbinding2.view.clicks
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -27,12 +30,28 @@ class SignInActivity : AppCompatActivity() {
 
     private val api by lazy { provideAuthApi() }
     private val authTokenProvider by lazy { AuthTokenProvider(this@SignInActivity) }
-    private val disposables = CompositeDisposable()
+    private val disposables = AutoClearedDisposable(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signin)
 
+        lifecycle += disposables
+
+        btnActivitySignInStart.clicks()
+                .subscribe({
+                    val authUri = Uri.Builder().scheme("https:")
+                            .authority("github.com")
+                            .appendPath("login")
+                            .appendPath("oauth")
+                            .appendPath("authorize")
+                            .appendQueryParameter("client_id", BuildConfig.GITHUB_CLIENT_ID)
+                            .build()
+                    val intent = CustomTabsIntent.Builder().build()
+                    intent.launchUrl(this, authUri)
+                },{})
+
+/*
         btnActivitySignInStart.setOnClickListener {
             val authUri = Uri.Builder().scheme("https")
                     .authority("github.com")
@@ -46,6 +65,7 @@ class SignInActivity : AppCompatActivity() {
             val intent = CustomTabsIntent.Builder().build()
             intent.launchUrl(this@SignInActivity, authUri)
         }
+*/
 
 
         if(null != authTokenProvider.token){
@@ -58,12 +78,6 @@ class SignInActivity : AppCompatActivity() {
 
         val code = intent.data?.getQueryParameter("code") ?: throw IllegalStateException("No code exists")
         getAccessToken(code)
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        disposables.clear()
     }
 
     private fun getAccessToken(code : String){
