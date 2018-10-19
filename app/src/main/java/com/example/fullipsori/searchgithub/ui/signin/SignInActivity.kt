@@ -37,7 +37,7 @@ class SignInActivity : AppCompatActivity() {
         setContentView(R.layout.activity_signin)
 
         lifecycle += disposables
-
+/*
         btnActivitySignInStart.clicks()
                 .subscribe({
                     val authUri = Uri.Builder().scheme("https:")
@@ -50,8 +50,8 @@ class SignInActivity : AppCompatActivity() {
                     val intent = CustomTabsIntent.Builder().build()
                     intent.launchUrl(this, authUri)
                 },{})
+*/
 
-/*
         btnActivitySignInStart.setOnClickListener {
             val authUri = Uri.Builder().scheme("https")
                     .authority("github.com")
@@ -65,7 +65,7 @@ class SignInActivity : AppCompatActivity() {
             val intent = CustomTabsIntent.Builder().build()
             intent.launchUrl(this@SignInActivity, authUri)
         }
-*/
+
 
 
         if(null != authTokenProvider.token){
