@@ -3,6 +3,7 @@ package com.example.fullipsori.searchgithub.ui.main
 import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
+import android.arch.lifecycle.ViewModelProviders
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
@@ -35,21 +36,50 @@ class MainActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
         SearchAdapter().apply { setItemClickListener(this@MainActivity) }
     }
 
+    private val viewDisposable = AutoClearedDisposable(this, false)
     private val autoClearedDisposable  = AutoClearedDisposable(this)
     private val searchHistoryDao : SearchHistoryDao by lazy { provideSearchHistoryDao(this) }
+
+    private val viewModelFactory by lazy {
+        MainViewModelFactory(provideSearchHistoryDao(this))
+    }
+
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory)[MainViewModel::class.java]
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        lifecycle += AutoActivatedDisposable(this) {fetchSearchHistory()}
-        lifecycle += autoClearedDisposable
-        lifecycle += object : LifecycleObserver {
-            @OnLifecycleEvent(Lifecycle.Event.ON_START)
-            fun fetch(){
-                autoClearedDisposable += fetchSearchHistory()
-            }
+        lifecycle += AutoActivatedDisposable(this) {
+            viewModel.searchHistory
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe {items ->
+                        with(searchAdapter){
+                            if(items.isEmpty){
+
+                            }else {
+                                setItems(items.value)
+                            }
+                            notifyDataSetChanged()
+                        }
+                    }
         }
+
+        viewDisposable += viewModel.message
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{ message ->
+                    if(message.isEmpty){
+
+                    }else{
+
+                    }
+                }
+
+        lifecycle += viewDisposable
+        lifecycle += autoClearedDisposable
 
         btnActivityMainSearch.setOnClickListener {
             startActivity<SearchActivity>()
@@ -83,14 +113,4 @@ class MainActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun fetchSearchHistory() : Disposable = searchHistoryDao.getHistory()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe( {items ->
-                with(searchAdapter){
-                    setItems(items)
-                    notifyDataSetChanged()
-                }
-                if(items.isEmpty()){} else {}
-            },{} )
 }

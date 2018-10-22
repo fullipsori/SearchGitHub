@@ -1,5 +1,7 @@
 package com.example.fullipsori.searchgithub.ui.signin
 
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -28,29 +30,20 @@ import org.jetbrains.anko.newTask
 
 class SignInActivity : AppCompatActivity() {
 
-    private val api by lazy { provideAuthApi() }
-    private val authTokenProvider by lazy { AuthTokenProvider(this@SignInActivity) }
     private val disposables = AutoClearedDisposable(this)
+    private val viewDisposables = AutoClearedDisposable(this, false)
+
+    private val viewModelFactory by lazy { SignInViewModelFactory(provideAuthApi(), AuthTokenProvider(this)) }
+    lateinit var viewModel : SignInViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signin)
 
         lifecycle += disposables
-/*
-        btnActivitySignInStart.clicks()
-                .subscribe({
-                    val authUri = Uri.Builder().scheme("https:")
-                            .authority("github.com")
-                            .appendPath("login")
-                            .appendPath("oauth")
-                            .appendPath("authorize")
-                            .appendQueryParameter("client_id", BuildConfig.GITHUB_CLIENT_ID)
-                            .build()
-                    val intent = CustomTabsIntent.Builder().build()
-                    intent.launchUrl(this, authUri)
-                },{})
-*/
+        lifecycle += viewDisposables
+
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(SignInViewModel::class.java)
 
         btnActivitySignInStart.setOnClickListener {
             val authUri = Uri.Builder().scheme("https")
@@ -68,9 +61,27 @@ class SignInActivity : AppCompatActivity() {
 
 
 
-        if(null != authTokenProvider.token){
-            launchMainActivity()
-        }
+        viewDisposables += viewModel.accessToken
+                .filter{ !it.isEmpty}
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{ launchMainActivity() }
+        viewDisposables += viewModel.errorMessage
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{
+                    showError(it)
+                }
+        viewDisposables += viewModel.isLoading
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {isLoading ->
+                    if(isLoading){
+                       showProgress(true)
+                    }else{
+                       showProgress(false)
+                    }
+                }
+
+        disposables += viewModel.loadAccessToken()
+
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -81,22 +92,7 @@ class SignInActivity : AppCompatActivity() {
     }
 
     private fun getAccessToken(code : String){
-        disposables += api.getAccessToken(BuildConfig.GITHUB_CLIENT_ID, BuildConfig.GITHUB_CLIENT_SECRET, code)
-                .observeOn(AndroidSchedulers.mainThread())
-                .map { it.accessToken }
-                .doOnSubscribe{showProgress(true)}
-                .doOnTerminate { showProgress(false) }
-                .subscribe(
-                        { token ->
-                            Log.d("xsemiyas", "getAccessToken: ${token}")
-                            authTokenProvider.updateToken(token)
-                            launchMainActivity()
-                        },
-                        {
-                            showError(it)
-                        }
-                )
-
+        disposables += viewModel.getAccessToken(BuildConfig.GITHUB_CLIENT_ID, BuildConfig.GITHUB_CLIENT_SECRET, code)
     }
 
     private fun showProgress(visiable : Boolean){
@@ -104,8 +100,8 @@ class SignInActivity : AppCompatActivity() {
         pbActivitySignIn.visibility = if(visiable) View.VISIBLE else View.GONE
     }
 
-    private fun showError(throwable: Throwable){
-        Log.d("xsemiyas", throwable.message ?: "no error message")
+    private fun showError(message: String){
+        Log.d("xsemiyas", message )
     }
 
     private fun launchMainActivity(){

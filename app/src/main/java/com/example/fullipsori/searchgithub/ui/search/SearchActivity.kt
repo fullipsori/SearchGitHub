@@ -1,5 +1,6 @@
 package com.example.fullipsori.searchgithub.ui.search
 
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -35,7 +36,13 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
     private val api by lazy { provideGithubApi(this@SearchActivity) }
     private val disposables = AutoClearedDisposable(this)
     private val viewDisposable = AutoClearedDisposable(this, alwaysClearOnStop = false)
-    private val searchHistoryDao : SearchHistoryDao by lazy { provideSearchHistoryDao(this@SearchActivity) }
+
+    private val viewModelFactory by lazy {
+        SearchViewModelFactory(provideGithubApi(this), provideSearchHistoryDao(this@SearchActivity))
+    }
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory)[SearchViewModel::class.java]
+    }
 
     internal val searchAdapter by lazy {
         SearchAdapter().apply{
@@ -51,7 +58,38 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
             adapter = this@SearchActivity.searchAdapter
         }
 
-        disposables += runOnceOnIoScheduler { searchHistoryDao.getHistory() }
+        viewDisposable += viewModel.searchResult
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{ message ->
+                    with(searchAdapter){
+                        if(message.isEmpty){
+                            setItems(listOf())
+                        } else {
+                            setItems(message.value)
+                        }
+                        notifyDataSetChanged()
+                    }
+                }
+        viewDisposable += viewModel.displayMessage
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    if(it.isEmpty){
+                        hideError()
+                    }else{
+                        showError(it.value)
+                    }
+                }
+
+        viewDisposable += viewModel.isLoading
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{
+                    if (it){
+                        showProgress()
+                    }else{
+                        hideProgress()
+                    }
+                }
+
 
         lifecycle += disposables
         lifecycle += viewDisposable
@@ -62,6 +100,16 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
         menuInflater.inflate(R.menu.menu_search, menu)
         menuSearch = menu.findItem(R.id.app_bar_search)
         searchView = (menuSearch.actionView as SearchView)
+
+        viewDisposable += viewModel.lastKeyword
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { keyword ->
+                    if(keyword.isEmpty){
+                        menuSearch.expandActionView()
+                    }else{
+                        updateTitle(keyword.value)
+                    }
+                }
 
         viewDisposable += searchView.queryTextChangeEvents()
                 .filter { it.isSubmitted }
@@ -86,6 +134,13 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
         return super.onOptionsItemSelected(item)
     }
 
+    private fun hideError() = Unit
+
+    private fun showError(message : String) = Unit
+
+    private fun showProgress() = Unit
+    private fun hideProgress() = Unit
+
     // private functions
     private fun updateTitle(query: String?){
         supportActionBar?.title = query
@@ -102,29 +157,11 @@ class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
     }
 
     private fun searchRepository(query : String){
-        disposables += api.searchRepository(query)
-                .flatMap {
-                    if( 0 == it.totalCount){
-                        Observable.error(IllegalStateException("count is zero"))
-                    }else{
-                        Observable.just(it.items)
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe {  }
-                .doOnTerminate {  }
-                .subscribe({items ->
-                    with(searchAdapter){
-                        setItems(items)
-                        notifyDataSetChanged()
-                    }
-                }){
-
-                }
+        disposables += viewModel.searchRepository(query)
     }
 
     override fun onItemClick(repository: GithubRepo) {
-        disposables += runOnceOnIoScheduler {  searchHistoryDao.add(repository) }
+        disposables += viewModel.addToSearchHistory(repository)
         startActivity<RepositoryActivity>(
                 RepositoryActivity.KEY_USER_LOGIN to repository.owner.login,
                 RepositoryActivity.KEY_REPO_NAME to repository.name)

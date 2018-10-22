@@ -1,5 +1,6 @@
 package com.example.fullipsori.searchgithub.ui.repo
 
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.bumptech.glide.Glide
@@ -24,6 +25,12 @@ class RepositoryActivity : AppCompatActivity() {
     }
 
     private val disposables = AutoClearedDisposable(this)
+    private val viewDisposables = AutoClearedDisposable(this, false)
+
+    private val viewModelFactory by lazy { RepositoryViewModelFactory(provideGithubApi(this)) }
+    private val viewModel by lazy {
+        ViewModelProviders.of(this, viewModelFactory)[RepositoryViewModel::class.java]
+    }
 
     val api by lazy { provideGithubApi(this@RepositoryActivity) }
 
@@ -34,26 +41,14 @@ class RepositoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_repository)
 
-        lifecycle += disposables
-
-        val login = intent.getStringExtra(KEY_USER_LOGIN) ?: throw IllegalArgumentException("user login info")
-        val repo = intent.getStringExtra(KEY_REPO_NAME) ?: throw IllegalArgumentException("key repo name")
-
-        showRepositoryInfo(login, repo)
-    }
-
-
-    private fun showRepositoryInfo(login : String, repo : String){
-        disposables += api.getRepository(login, repo)
-                .subscribeOn(Schedulers.io())
+        viewDisposables += viewModel.repository
+                .filter { !it.isEmpty }
+                .map { it.value }
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe {  }
-                .doOnComplete {  }
-                .doOnError {  }
-                .subscribe({repo ->
-                   Glide.with(this@RepositoryActivity)
-                           .load(repo.owner.avatarUrl)
-                           .into(ivActivityRepositoryProfile)
+                .subscribe { repo ->
+                    Glide.with(this@RepositoryActivity)
+                            .load(repo.owner.avatarUrl)
+                            .into(ivActivityRepositoryProfile)
                     tvActivityRepositoryName.text = repo.fullName
                     tvActivityRepositoryStars.text = resources.getQuantityString(R.plurals.star, repo.stars, repo.stars)
                     tvActivityRepositoryDescription.text = repo.description ?: "No description provided"
@@ -65,10 +60,26 @@ class RepositoryActivity : AppCompatActivity() {
                     } catch (e: ParseException){
                         tvActivityRepositoryLastUpdate.text = "Unknown"
                     }
-                },{
+                }
+        viewDisposables += viewModel.isContentVisible
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { visible -> {} }
+        viewDisposables += viewModel.isLoading
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { isLoading -> {} }
 
-                })
+        viewDisposables += viewModel.message
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { message -> {} }
 
+
+        lifecycle += viewDisposables
+        lifecycle += disposables
+
+        val login = intent.getStringExtra(KEY_USER_LOGIN) ?: throw IllegalArgumentException("user login info")
+        val repo = intent.getStringExtra(KEY_REPO_NAME) ?: throw IllegalArgumentException("key repo name")
+
+        disposables += viewModel.requstRepositoryInfo(login, repo)
     }
 
 }
