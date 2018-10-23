@@ -21,6 +21,7 @@ import com.example.fullipsori.searchgithub.ui.utils.AutoActivatedDisposable
 import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
 import com.example.fullipsori.searchgithub.ui.utils.plusAssign
 import com.example.fullipsori.searchgithub.ui.utils.runOnceOnIoScheduler
+import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -29,8 +30,9 @@ import org.jetbrains.anko.clearTask
 import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.newTask
 import org.jetbrains.anko.startActivity
+import javax.inject.Inject
 
-class MainActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
+class MainActivity : DaggerAppCompatActivity(), SearchAdapter.ItemClickListener {
 
     private val searchAdapter : SearchAdapter by lazy {
         SearchAdapter().apply { setItemClickListener(this@MainActivity) }
@@ -38,11 +40,10 @@ class MainActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
 
     private val viewDisposable = AutoClearedDisposable(this, false)
     private val autoClearedDisposable  = AutoClearedDisposable(this)
-    private val searchHistoryDao : SearchHistoryDao by lazy { provideSearchHistoryDao(this) }
 
-    private val viewModelFactory by lazy {
-        MainViewModelFactory(provideSearchHistoryDao(this))
-    }
+    @Inject lateinit var searchHistoryDao: SearchHistoryDao
+
+    @Inject lateinit var viewModelFactory: MainViewModelFactory
 
     private val viewModel by lazy {
         ViewModelProviders.of(this, viewModelFactory)[MainViewModel::class.java]

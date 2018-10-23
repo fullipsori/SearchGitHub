@@ -5,9 +5,11 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.example.fullipsori.searchgithub.R
+import com.example.fullipsori.searchgithub.api.GithubApi
 import com.example.fullipsori.searchgithub.api.provideGithubApi
 import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
 import com.example.fullipsori.searchgithub.ui.utils.plusAssign
+import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -16,9 +18,10 @@ import kotlinx.android.synthetic.main.activity_repository.*
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 import kotlin.IllegalArgumentException
 
-class RepositoryActivity : AppCompatActivity() {
+class RepositoryActivity : DaggerAppCompatActivity() {
     companion object {
         const val KEY_USER_LOGIN = "user_login"
         const val KEY_REPO_NAME = "repo_name"
@@ -27,12 +30,11 @@ class RepositoryActivity : AppCompatActivity() {
     private val disposables = AutoClearedDisposable(this)
     private val viewDisposables = AutoClearedDisposable(this, false)
 
-    private val viewModelFactory by lazy { RepositoryViewModelFactory(provideGithubApi(this)) }
+    @Inject lateinit var viewModelFactory: RepositoryViewModelFactory
+
     private val viewModel by lazy {
         ViewModelProviders.of(this, viewModelFactory)[RepositoryViewModel::class.java]
     }
-
-    val api by lazy { provideGithubApi(this@RepositoryActivity) }
 
     val dateFormatInResponse : SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.getDefault())
     val dateFormatToShow : SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

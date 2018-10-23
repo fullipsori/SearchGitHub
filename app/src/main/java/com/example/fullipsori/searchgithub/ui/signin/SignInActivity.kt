@@ -12,12 +12,14 @@ import android.util.Log
 import android.view.View
 import com.example.fullipsori.searchgithub.BuildConfig
 import com.example.fullipsori.searchgithub.R
+import com.example.fullipsori.searchgithub.api.AuthApi
 import com.example.fullipsori.searchgithub.api.provideAuthApi
 import com.example.fullipsori.searchgithub.data.AuthTokenProvider
 import com.example.fullipsori.searchgithub.ui.main.MainActivity
 import com.example.fullipsori.searchgithub.ui.utils.AutoClearedDisposable
 import com.example.fullipsori.searchgithub.ui.utils.plusAssign
 import com.jakewharton.rxbinding2.view.clicks
+import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -27,13 +29,14 @@ import org.jetbrains.anko.Android
 import org.jetbrains.anko.clearTask
 import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.newTask
+import javax.inject.Inject
 
-class SignInActivity : AppCompatActivity() {
+class SignInActivity : DaggerAppCompatActivity() {
 
     private val disposables = AutoClearedDisposable(this)
     private val viewDisposables = AutoClearedDisposable(this, false)
 
-    private val viewModelFactory by lazy { SignInViewModelFactory(provideAuthApi(), AuthTokenProvider(this)) }
+    @Inject lateinit var viewModelFactory: SignInViewModelFactory
     lateinit var viewModel : SignInViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {

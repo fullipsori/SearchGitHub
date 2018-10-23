@@ -10,6 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
 import com.example.fullipsori.searchgithub.R
+import com.example.fullipsori.searchgithub.api.GithubApi
 import com.example.fullipsori.searchgithub.api.model.GithubRepo
 import com.example.fullipsori.searchgithub.api.provideGithubApi
 import com.example.fullipsori.searchgithub.data.SearchHistoryDao
@@ -20,6 +21,7 @@ import com.example.fullipsori.searchgithub.ui.utils.plusAssign
 import com.example.fullipsori.searchgithub.ui.utils.runOnceOnIoScheduler
 import com.jakewharton.rxbinding2.support.v7.widget.RxSearchView
 import com.jakewharton.rxbinding2.support.v7.widget.queryTextChangeEvents
+import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -29,17 +31,19 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_search.*
 import org.jetbrains.anko.startActivity
+import javax.inject.Inject
 
-class SearchActivity : AppCompatActivity(), SearchAdapter.ItemClickListener {
+class SearchActivity : DaggerAppCompatActivity(), SearchAdapter.ItemClickListener {
     private lateinit var menuSearch : MenuItem
     private lateinit var searchView : SearchView
     private val api by lazy { provideGithubApi(this@SearchActivity) }
     private val disposables = AutoClearedDisposable(this)
     private val viewDisposable = AutoClearedDisposable(this, alwaysClearOnStop = false)
 
-    private val viewModelFactory by lazy {
-        SearchViewModelFactory(provideGithubApi(this), provideSearchHistoryDao(this@SearchActivity))
-    }
+    @Inject lateinit var searchHistoryDao: SearchHistoryDao
+
+    @Inject lateinit var viewModelFactory: SearchViewModelFactory
+
     private val viewModel by lazy {
         ViewModelProviders.of(this, viewModelFactory)[SearchViewModel::class.java]
     }
